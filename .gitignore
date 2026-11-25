@@ -1,2 +1,5 @@
 /target/
 /.idea/
+/build-support/compile-deps/
+/build-support/audit-deps/
+__pycache__/

@@ -66,16 +66,16 @@ public class DataQueries {
         .setValue(DataHandler.COLUMN_LATEST_REWARD_ID, data -> String.valueOf(data.getLatestRewardId()));
 
     public static final UpdateQuery<GlobalCrateData> CRATE_DATA_UPDATE = new UpdateQuery<GlobalCrateData>()
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, GlobalCrateData::getCrateId)
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, GlobalCrateData::getCrateId)
         .setValue(DataHandler.COLUMN_LATEST_OPENER_ID, data -> data.getLatestOpenerId() == null ? "null" : data.getLatestOpenerId().toString())
         .setValue(DataHandler.COLUMN_LATEST_OPENER_NAME, data -> String.valueOf(data.getLatestOpenerName()))
         .setValue(DataHandler.COLUMN_LATEST_REWARD_ID, data -> String.valueOf(data.getLatestRewardId()));
 
     public static final DeleteQuery<GlobalCrateData> CRATE_DATA_DELETE = new DeleteQuery<GlobalCrateData>()
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, GlobalCrateData::getCrateId);
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, GlobalCrateData::getCrateId);
 
     public static final DeleteQuery<Crate> CRATE_DATA_DELETE_CRATE = new DeleteQuery<Crate>()
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, Crate::getId);
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, crate -> crate.getId().toLowerCase());
 
 
 
@@ -87,24 +87,24 @@ public class DataQueries {
         .setValue(DataHandler.COLUMN_RESET_DATE, limit -> String.valueOf(limit.getCooldownUntil()));
 
     public static final UpdateQuery<RewardData> REWARD_LIMIT_UPDATE = new UpdateQuery<RewardData>()
-        .whereIgnoreCase(DataHandler.COLUMN_HOLDER, WhereOperator.EQUAL, RewardData::getHolder)
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, RewardData::getCrateId)
-        .whereIgnoreCase(DataHandler.COLUMN_REWARD_ID, WhereOperator.EQUAL, RewardData::getRewardId)
+        .where(DataHandler.COLUMN_HOLDER, WhereOperator.EQUAL, RewardData::getHolder)
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, RewardData::getCrateId)
+        .where(DataHandler.COLUMN_REWARD_ID, WhereOperator.EQUAL, RewardData::getRewardId)
         .setValue(DataHandler.COLUMN_AMOUNT, limit -> String.valueOf(limit.getRolls()))
         .setValue(DataHandler.COLUMN_RESET_DATE, limit -> String.valueOf(limit.getCooldownUntil()));
 
     public static final DeleteQuery<RewardData> REWARD_LIMIT_DELETE = new DeleteQuery<RewardData>()
-        .whereIgnoreCase(DataHandler.COLUMN_HOLDER, WhereOperator.EQUAL, RewardData::getHolder)
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, RewardData::getCrateId)
-        .whereIgnoreCase(DataHandler.COLUMN_REWARD_ID, WhereOperator.EQUAL, RewardData::getRewardId);
+        .where(DataHandler.COLUMN_HOLDER, WhereOperator.EQUAL, RewardData::getHolder)
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, RewardData::getCrateId)
+        .where(DataHandler.COLUMN_REWARD_ID, WhereOperator.EQUAL, RewardData::getRewardId);
 
     public static final DeleteQuery<Crate> REWARD_LIMIT_DELETE_CRATE = new DeleteQuery<Crate>()
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, Crate::getId);
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, crate -> crate.getId().toLowerCase());
 
     public static final DeleteQuery<Reward> REWARD_LIMIT_DELETE_REWARD = new DeleteQuery<Reward>()
-        .whereIgnoreCase(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, reward -> reward.getCrate().getId())
-        .whereIgnoreCase(DataHandler.COLUMN_REWARD_ID, WhereOperator.EQUAL, Reward::getId);
+        .where(DataHandler.COLUMN_CRATE_ID, WhereOperator.EQUAL, reward -> reward.getCrate().getId().toLowerCase())
+        .where(DataHandler.COLUMN_REWARD_ID, WhereOperator.EQUAL, reward -> reward.getId().toLowerCase());
 
     public static final DeleteQuery<UUID> REWARD_LIMIT_DELETE_PLAYER = new DeleteQuery<UUID>()
-        .whereIgnoreCase(DataHandler.COLUMN_HOLDER, WhereOperator.EQUAL, UUID::toString);
+        .where(DataHandler.COLUMN_HOLDER, WhereOperator.EQUAL, UUID::toString);
 }

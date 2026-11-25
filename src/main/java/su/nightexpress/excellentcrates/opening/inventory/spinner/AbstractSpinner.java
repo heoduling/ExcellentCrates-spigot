@@ -61,7 +61,8 @@ public abstract class AbstractSpinner implements Spinner {
     }
 
     private boolean isStepDone() {
-        return this.stepCount >= this.currentStep.getSpinsAmount();
+        SpinStep step = this.currentStep;
+        return step != null && this.stepCount >= step.getSpinsAmount();
     }
 
     @Override
@@ -122,6 +123,8 @@ public abstract class AbstractSpinner implements Spinner {
     protected abstract void onStop();
 
     protected void onSpin() {
+        if (this.currentStep == null) return;
+
         if (!this.isSilent()) {
             NightSound sound = this.data.getSound();
             if (sound != null) sound.play(this.opening.getPlayer());

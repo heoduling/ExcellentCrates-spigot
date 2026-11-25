@@ -556,6 +556,16 @@ public class CrateManager extends AbstractManager<CratesPlugin> {
     }
 
     public boolean openCrate(@NotNull Player player, @NotNull CrateSource source, @NotNull OpenOptions options, @Nullable Cost cost) {
+        if (!this.plugin.getHotUnloadGuard().beginOpening()) return false;
+        try {
+            return this.openAdmittedCrate(player, source, options, cost);
+        }
+        finally {
+            this.plugin.getHotUnloadGuard().endOpening();
+        }
+    }
+
+    private boolean openAdmittedCrate(@NotNull Player player, @NotNull CrateSource source, @NotNull OpenOptions options, @Nullable Cost cost) {
         Crate crate = source.getCrate();
         CrateUser user = plugin.getUserManager().getOrFetch(player);
         UserCrateData userCrate = user.getCrateData(crate);

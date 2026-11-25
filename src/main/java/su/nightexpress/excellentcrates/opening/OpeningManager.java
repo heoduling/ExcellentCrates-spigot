@@ -152,7 +152,10 @@ public class OpeningManager extends AbstractManager<CratesPlugin> {
     }
 
     public void tickOpenings() {
-        this.getOpenings().forEach(Opening::tick);
+        if (this.plugin.getHotUnloadGuard().isDraining()) return;
+        this.getOpenings().forEach(opening -> this.plugin.runTask(opening.getPlayer(), () -> {
+            if (!this.plugin.getHotUnloadGuard().isDraining()) opening.tick();
+        }));
     }
 
     public boolean isOpening(@NotNull Player player) {

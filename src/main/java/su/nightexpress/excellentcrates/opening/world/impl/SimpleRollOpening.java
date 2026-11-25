@@ -50,6 +50,7 @@ public class SimpleRollOpening extends WorldOpening {
     private void onFirstTick() {
         Block block = this.source.getBlock();
 
+        Location center;
         if (block == null) {
             Location playerLoc = this.player.getEyeLocation().clone();
             Vector direction = playerLoc.getDirection();
@@ -58,23 +59,19 @@ public class SimpleRollOpening extends WorldOpening {
                 playerLoc.add(direction);
             }
 
-            this.displayLocation = LocationUtil.setCenter3D(playerLoc);
+            center = LocationUtil.setCenter3D(playerLoc);
         }
         else {
-            // 在Folia环境中，block.getBoundingBox().getHeight()需要区域线程访问
-            // 使用区域调度器在方块所在的位置上执行任务
-            Location blockLocation = block.getLocation();
-            this.plugin.runTask(blockLocation, () -> {
-                double offset = Math.max(0, this.crate.getHologramYOffset());
-                double height = block.getBoundingBox().getHeight() + offset;
-                
-                Location center = LocationUtil.setCenter2D(block.getLocation()).add(0, height, 0);
-                WorldPos blockPos = WorldPos.from(block);
-                this.hideHologram(blockPos);
-                
-                this.displayLocation = center;
-            });
+            double offset = Math.max(0, this.crate.getHologramYOffset());
+            double height = block.getBoundingBox().getHeight() + offset;
+
+            center = LocationUtil.setCenter2D(block.getLocation()).add(0, height, 0);
+
+            WorldPos blockPos = WorldPos.from(block);
+            this.hideHologram(blockPos);
         }
+
+        this.displayLocation = center;
     }
 
     @Override
@@ -133,8 +130,7 @@ public class SimpleRollOpening extends WorldOpening {
         this.addReward(this.reward);
 
         if (this.rewardDisplay != null) {
-            Item display = this.rewardDisplay;
-            this.plugin.runTask(display.getLocation(), display::remove);
+            this.rewardDisplay.remove();
             this.rewardDisplay = null;
         }
 
@@ -162,34 +158,30 @@ public class SimpleRollOpening extends WorldOpening {
 
     private void displayReward() {
         Reward reward = this.isSpinsCompleted() ? this.reward : this.crate.rollReward(this.player);
-        Location location = this.displayLocation;
-        if (location == null || location.getWorld() == null) return;
 
-        ItemStack itemStack = reward.getPreviewItem();
-        String rewardName = reward.getName();
-        boolean completed = this.isSpinsCompleted();
-        this.plugin.runTask(location, () -> {
-            if (!this.running) return;
-
-            if (this.rewardDisplay == null) {
-                this.rewardDisplay = location.getWorld().spawn(location, Item.class, item -> item.setVelocity(new Vector()));
-                this.rewardDisplay.setPersistent(false);
-                this.rewardDisplay.setCustomNameVisible(true);
-                this.rewardDisplay.setGravity(false);
-                this.rewardDisplay.setPickupDelay(Integer.MAX_VALUE);
-                this.rewardDisplay.setUnlimitedLifetime(true);
-                this.rewardDisplay.setInvulnerable(true);
-            }
-
+        if (this.rewardDisplay == null) {
+            this.rewardDisplay = player.getWorld().spawn(this.displayLocation, Item.class, item -> item.setVelocity(new Vector()));
+            this.rewardDisplay.setPersistent(false);
+            this.rewardDisplay.setCustomNameVisible(true);
+            this.rewardDisplay.setGravity(false);
+            this.rewardDisplay.setPickupDelay(Integer.MAX_VALUE);
+            this.rewardDisplay.setUnlimitedLifetime(true);
+            this.rewardDisplay.setInvulnerable(true);
+            //this.rewardDisplay.setBillboard(Display.Billboard.CENTER);
+            //this.rewardDisplay.setTransformation(new Transformation(new Vector3f(), new AxisAngle4f(), new Vector3f(0.35f, 0.35f, 0.35f), new AxisAngle4f()));
+        }
+        if (this.rewardDisplay != null) {
+            ItemStack itemStack = reward.getPreviewItem();
             this.rewardDisplay.setItemStack(itemStack);
-            EntityUtil.setCustomName(this.rewardDisplay, rewardName);
-            VanillaSound.of(Sound.UI_BUTTON_CLICK, 0.5f).play(location);
-            VanillaSound.of(Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f).play(location);
+            EntityUtil.setCustomName(this.rewardDisplay, reward.getName());
+        }
 
-            if (completed) {
-                VanillaSound.of(Sound.ENTITY_GENERIC_EXPLODE, 0.7f).play(location);
-                OpeningUtils.createFirework(location);
-            }
-        });
+        VanillaSound.of(Sound.UI_BUTTON_CLICK, 0.5f).play(this.displayLocation);
+        VanillaSound.of(Sound.BLOCK_NOTE_BLOCK_BELL, 0.5f).play(this.displayLocation);
+
+        if (this.isSpinsCompleted()) {
+            VanillaSound.of(Sound.ENTITY_GENERIC_EXPLODE, 0.7f).play(this.displayLocation);
+            OpeningUtils.createFirework(this.displayLocation);
+        }
     }
 }

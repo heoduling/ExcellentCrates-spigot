@@ -191,7 +191,8 @@ public class MilestonesMenu extends LinkedMenu<CratesPlugin, CrateSource> implem
 
         loader.addDefaultItem(MenuItem.buildReturn(this, 22, (viewer, event) -> {
             CrateSource source = this.getLink(viewer.getPlayer());
-            this.runNextTick(() -> plugin.getCrateManager().previewCrate(viewer.getPlayer(), source));
+            viewer.getPlayer().getScheduler().run(this.plugin,
+                task -> plugin.getCrateManager().previewCrate(viewer.getPlayer(), source), null);
         }).setPriority(MenuItem.HIGH_PRIORITY));
 
         loader.addDefaultItem(MenuItem.buildNextPage(this, 17).setPriority(MenuItem.HIGH_PRIORITY));

@@ -5,6 +5,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
@@ -27,13 +28,24 @@ public class OpeningListener extends AbstractListener<CratesPlugin> {
         this.manager.stopOpening(event.getPlayer());
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onInvOpeningClick(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
         Opening opening = this.manager.getOpening(player);
         if (!(opening instanceof InventoryOpening inventoryOpening)) return;
+        if (inventoryOpening.getView() != event.getView()) return;
 
         inventoryOpening.onClick(event);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onInvOpeningDrag(InventoryDragEvent event) {
+        Player player = (Player) event.getWhoClicked();
+        Opening opening = this.manager.getOpening(player);
+        if (!(opening instanceof InventoryOpening inventoryOpening)) return;
+        if (inventoryOpening.getView() != event.getView()) return;
+
+        event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -41,6 +53,7 @@ public class OpeningListener extends AbstractListener<CratesPlugin> {
         Player player = (Player) event.getPlayer();
         Opening opening = this.manager.getOpening(player);
         if (!(opening instanceof InventoryOpening inventoryOpening)) return;
+        if (!inventoryOpening.isRunning()) return;
 
         if (inventoryOpening.isLaunched() && !opening.isCompleted()) {
             if (inventoryOpening.canSkip()) {

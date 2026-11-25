@@ -9,6 +9,12 @@ import java.util.UUID;
 
 public class UserManager extends AbstractUserManager<CratesPlugin, CrateUser> {
 
+    @Override
+    protected void onShutdown() {
+        this.dataManager.saveUsersFully(this.getLoaded());
+        super.onShutdown();
+    }
+
     public UserManager(@NotNull CratesPlugin plugin, @NotNull DataHandler dataHandler) {
         super(plugin, dataHandler);
     }

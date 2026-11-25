@@ -16,6 +16,7 @@ import su.nightexpress.excellentcrates.editor.EditorManager;
 import su.nightexpress.excellentcrates.hologram.HologramManager;
 import su.nightexpress.excellentcrates.hooks.impl.PlaceholderHook;
 import su.nightexpress.excellentcrates.key.KeyManager;
+import su.nightexpress.excellentcrates.lifecycle.HotUnloadGuard;
 import su.nightexpress.excellentcrates.opening.OpeningManager;
 import su.nightexpress.excellentcrates.opening.ProviderRegistry;
 import su.nightexpress.excellentcrates.registry.CratesRegistries;
@@ -33,6 +34,7 @@ import java.util.function.Consumer;
 public class CratesPlugin extends NightPlugin {
 
     private final List<CratesAddon> addons = new ArrayList<>();
+    private final HotUnloadGuard hotUnloadGuard = new HotUnloadGuard(this);
 
     private DialogRegistry dialogRegistry;
 
@@ -74,6 +76,7 @@ public class CratesPlugin extends NightPlugin {
 
     @Override
     public void enable() {
+        this.hotUnloadGuard.setup();
         this.crateLogger = new CrateLogger(this);
         this.dialogRegistry = new DialogRegistry(this);
 
@@ -91,6 +94,9 @@ public class CratesPlugin extends NightPlugin {
         this.userManager = new UserManager(this, this.dataHandler);
         this.userManager.setup();
 
+        this.keyManager = new KeyManager(this, this.dialogRegistry);
+        this.keyManager.setup();
+
         this.crateManager = new CrateManager(this, this.dialogRegistry);
         this.crateManager.setup();
 
@@ -101,9 +107,6 @@ public class CratesPlugin extends NightPlugin {
 
         this.openingManager = new OpeningManager(this);
         this.openingManager.setup();
-
-        this.keyManager = new KeyManager(this, this.dialogRegistry);
-        this.keyManager.setup();
 
         this.editorManager = new EditorManager(this, this.dialogRegistry);
         this.editorManager.setup();
@@ -122,6 +125,7 @@ public class CratesPlugin extends NightPlugin {
 
     @Override
     public void disable() {
+        this.hotUnloadGuard.shutdown();
         if (this.editorManager != null) this.editorManager.shutdown();
         if (this.openingManager != null) this.openingManager.shutdown();
         if (this.keyManager != null) this.keyManager.shutdown();
@@ -163,6 +167,11 @@ public class CratesPlugin extends NightPlugin {
     @NotNull
     public List<CratesAddon> getAddons() {
         return this.addons;
+    }
+
+    @NotNull
+    public HotUnloadGuard getHotUnloadGuard() {
+        return this.hotUnloadGuard;
     }
 
     public boolean hasHolograms() {

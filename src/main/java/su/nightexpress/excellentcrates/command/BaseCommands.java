@@ -1,6 +1,7 @@
 package su.nightexpress.excellentcrates.command;
 
 import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +42,7 @@ public class BaseCommands {
             .description(CoreLang.COMMAND_RELOAD_DESC)
             .permission(Perms.COMMAND_RELOAD)
             .executes((context, arguments) -> {
-                plugin.doReload(context.getSender());
+                plugin.getHotUnloadGuard().prepareReload(context.getSender());
                 return true;
             })
         );
@@ -236,7 +237,7 @@ public class BaseCommands {
     private boolean openCrate(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {
         Crate crate = arguments.get(CommandArguments.CRATE, Crate.class);
         Player player = context.getPlayerOrThrow();
-        plugin.getCrateManager().preOpenCrate(player, new CrateSource(crate));
+        this.executeForPlayer(player, () -> plugin.getCrateManager().preOpenCrate(player, new CrateSource(crate)));
         return true;
     }
 
@@ -258,15 +259,17 @@ public class BaseCommands {
         boolean mass = context.hasFlag(CommandFlags.MASS);
         CrateSource source = new CrateSource(crate);
 
-        Cost cost = force ? null : crate.getAnyCost(player).orElse(null);
         OpenOptions options = force ? OpenOptions.ignoreRestrictions() : OpenOptions.empty();
 
-        if (mass) {
-            plugin.getCrateManager().multiOpenCrate(player, source, options, cost, cost == null ? 1 : cost.countMaxOpenings(player));
-        }
-        else {
-            plugin.getCrateManager().openCrate(player, source, options, cost);
-        }
+        this.executeForPlayer(player, () -> {
+            Cost cost = force ? null : crate.getAnyCost(player).orElse(null);
+            if (mass) {
+                plugin.getCrateManager().multiOpenCrate(player, source, options, cost, cost == null ? 1 : cost.countMaxOpenings(player));
+            }
+            else {
+                plugin.getCrateManager().openCrate(player, source, options, cost);
+            }
+        });
         return true;
     }
 
@@ -278,7 +281,7 @@ public class BaseCommands {
             return false;
         }
 
-        plugin.getCrateManager().previewCrate(player, new CrateSource(crate));
+        this.executeForPlayer(player, () -> plugin.getCrateManager().previewCrate(player, new CrateSource(crate)));
 
         if (context.getSender() != player) {
             Lang.COMMAND_PREVIEW_DONE_OTHERS.message().send(context.getSender(), replacer -> replacer
@@ -287,6 +290,15 @@ public class BaseCommands {
             );
         }
         return true;
+    }
+
+    private void executeForPlayer(@NotNull Player player, @NotNull Runnable action) {
+        if (Bukkit.isOwnedByCurrentRegion(player)) {
+            action.run();
+        }
+        else {
+            player.getScheduler().run(this.plugin, task -> action.run(), null);
+        }
     }
 
     private boolean resetCrateCooldown(@NotNull CommandContext context, @NotNull ParsedArguments arguments) {

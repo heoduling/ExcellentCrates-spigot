@@ -17,14 +17,18 @@ import su.nightexpress.excellentcrates.data.legacy.LegacyLimitDataSerializer;
 import su.nightexpress.excellentcrates.data.reward.RewardData;
 import su.nightexpress.excellentcrates.user.CrateUser;
 import su.nightexpress.nightcore.db.AbstractUserDataManager;
+import su.nightexpress.nightcore.db.config.DatabaseType;
 import su.nightexpress.nightcore.db.sql.column.Column;
 import su.nightexpress.nightcore.db.sql.column.ColumnType;
 import su.nightexpress.nightcore.db.sql.query.SQLQueries;
 import su.nightexpress.nightcore.db.sql.query.impl.SelectQuery;
 import su.nightexpress.nightcore.db.sql.query.type.ValuedQuery;
+import su.nightexpress.nightcore.db.sql.util.SQLUtils;
 import su.nightexpress.nightcore.util.Lists;
 
 import java.sql.ResultSet;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
@@ -177,6 +181,51 @@ public class DataHandler extends AbstractUserDataManager<CratesPlugin, CrateUser
             COLUMN_AMOUNT,
             COLUMN_RESET_DATE
         ));
+
+        this.createIndexes();
+    }
+
+    private void createIndexes() {
+        this.createIndex(this.tableUsers, "uuid", COLUMN_USER_ID);
+        this.createIndex(this.tableUsers, "last_online", COLUMN_USER_LAST_ONLINE);
+        this.createIndex(this.tableCrateData, "crate", COLUMN_CRATE_ID);
+        this.createIndex(this.tableRewardLimits, "holder_crate_reward", COLUMN_HOLDER, COLUMN_CRATE_ID, COLUMN_REWARD_ID);
+        this.createIndex(this.tableRewardLimits, "crate_reward", COLUMN_CRATE_ID, COLUMN_REWARD_ID);
+    }
+
+    private void createIndex(@NotNull String table, @NotNull String suffix, @NotNull Column... columns) {
+        String index = (table + "_" + suffix + "_idx").replaceAll("[^A-Za-z0-9_]", "_");
+        if (this.hasIndex(table, index)) return;
+
+        StringJoiner joiner = new StringJoiner(", ");
+        for (Column column : columns) {
+            joiner.add(this.formatIndexColumn(column));
+        }
+        SQLQueries.executeSimpleQuery(this.connector, "CREATE INDEX " + SQLUtils.escape(index) + " ON " + table + " (" + joiner + ")");
+    }
+
+    @NotNull
+    private String formatIndexColumn(@NotNull Column column) {
+        if (this.getStorageType() != DatabaseType.MYSQL || column.getType() != ColumnType.STRING) {
+            return column.getNameEscaped();
+        }
+        return column.getNameEscaped() + "(" + (column == COLUMN_USER_ID ? 36 : 64) + ")";
+    }
+
+    private boolean hasIndex(@NotNull String table, @NotNull String index) {
+        try (Connection connection = this.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            try (ResultSet resultSet = metaData.getIndexInfo(connection.getCatalog(), null, table, false, false)) {
+                while (resultSet.next()) {
+                    String indexName = resultSet.getString("INDEX_NAME");
+                    if (indexName != null && index.equalsIgnoreCase(indexName)) return true;
+                }
+            }
+        }
+        catch (SQLException exception) {
+            exception.printStackTrace();
+        }
+        return false;
     }
 
     @Override

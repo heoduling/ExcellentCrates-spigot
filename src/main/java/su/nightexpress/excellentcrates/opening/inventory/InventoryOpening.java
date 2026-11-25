@@ -58,11 +58,7 @@ public class InventoryOpening extends AbstractOpening {
     }
 
     public void onClick(@NotNull InventoryClickEvent event) {
-        Inventory clickedInv = event.getInventory();
-
-        if ((clickedInv.getType() != InventoryType.CRAFTING && clickedInv.getType() != InventoryType.CREATIVE) || !this.isSpinnersCompleted()) {
-            event.setCancelled(true);
-        }
+        event.setCancelled(true);
     }
 
     @Override
@@ -102,11 +98,11 @@ public class InventoryOpening extends AbstractOpening {
     protected void onStop() {
         this.getSpinners().forEach(Spinner::stop);
 
-        super.onStop();
-
         if (this.player.getOpenInventory() == this.view) {
             this.player.closeInventory();
         }
+
+        super.onStop();
     }
 
     @Override
